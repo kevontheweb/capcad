@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Capacitor Preview</title>
+
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.149.0/build/three.module.js",
+            "three/examples/jsm/loaders/STLLoader.js": "https://cdn.jsdelivr.net/npm/three@0.149.0/examples/jsm/loaders/STLLoader.js",
+            "three/examples/jsm/controls/OrbitControls.js": "https://cdn.jsdelivr.net/npm/three@0.149.0/examples/jsm/controls/OrbitControls.js"
+        }
+    }
+    </script>
+
+    <style>
+        body {
+            margin: 0;
+        }
+
+        #model {
+            width: 100%;
+            height: 500px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="controls">
+        <form method="POST">
+            <label>Length: <input type="text" name="length" required></label><br>
+            <label>Diameter: <input type="text" name="diameter" required></label><br>
+            <label>Pin Spacing: <input type="text" name="pin_spacing" required></label><br>
+            <button type="submit">Generate</button>
+        </form>
+    </div>
+    <div id="model"></div>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { STLLoader } from 'three/examples/jsm/loaders/STLLoader.js';
+        import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+
+        function STLViewer(model, elementID) {
+            const elem = document.getElementById(elementID);
+            const camera = new THREE.PerspectiveCamera(70, elem.clientWidth / elem.clientHeight, 1, 1000);
+            const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(elem.clientWidth, elem.clientHeight);
+            elem.appendChild(renderer.domElement);
+
+            window.addEventListener('resize', function () {
+                renderer.setSize(elem.clientWidth, elem.clientHeight);
+                camera.aspect = elem.clientWidth / elem.clientHeight;
+                camera.updateProjectionMatrix();
+            }, false);
+
+            const controls = new OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.rotateSpeed = 0.1;  // Adjust rotation speed
+            controls.dampingFactor = 0.2; // Smoother damping
+            controls.enableZoom = true;
+            controls.autoRotate = false;   // Disable auto-rotate
+            const scene = new THREE.Scene();
+            scene.add(new THREE.HemisphereLight(0xffffff, 1.5));
+
+            const loader = new STLLoader();
+            loader.load(model, function (geometry) {
+                const material = new THREE.MeshPhongMaterial({ color: 0xff5533, specular: 100, shininess: 100 });
+                const mesh = new THREE.Mesh(geometry, material);
+                scene.add(mesh);
+
+                const middle = new THREE.Vector3();
+                geometry.computeBoundingBox();
+                geometry.boundingBox.getCenter(middle);
+                mesh.geometry.applyMatrix4(new THREE.Matrix4().makeTranslation(-middle.x, -middle.y, -middle.z));
+
+                const largestDimension = Math.max(geometry.boundingBox.max.x, geometry.boundingBox.max.y, geometry.boundingBox.max.z);
+                camera.position.z =  largestDimension * 3;
+                camera.position.x =  largestDimension * 3;
+                camera.position.y =  largestDimension * 3;
+
+                function animate() {
+                    requestAnimationFrame(animate);
+                    controls.update();
+                    renderer.render(scene, camera);
+                }
+                animate();
+            });
+        }
+
+        window.onload = function () {
+            {% if stl_generated %}
+            STLViewer("static/capacitor.stl", "model");
+            {% endif %}
+        }
+    </script>
+</body>
+
+</html>
