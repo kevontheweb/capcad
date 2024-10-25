@@ -1,6 +1,6 @@
 # capcad 🔨
 
-webapp to generate CAD models of capacitors at arbitrary dimensions for use in EDA software, because I'm sick of making cylinders in FreeCAD
+webapp to generate CAD models of capacitors at arbitrary dimensions for use in EDA software, because I'm sick of making cylinders in FreeCAD (currently only makes cylinders :kek:)
 
 ## setup
 
